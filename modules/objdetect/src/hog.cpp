@@ -41,11 +41,13 @@
 //M*/
 
 #include "precomp.hpp"
+#include "cascadedetect.hpp"
 #include "opencv2/core/core_c.h"
 #include "opencl_kernels_objdetect.hpp"
 
 #include <cstdio>
 #include <iterator>
+#include <limits>
 
 /****************************************************************************************\
       The code below is implementation of HOG (Histogram-of-Oriented Gradients)
@@ -1459,6 +1461,7 @@ void HOGDescriptor::detect(const Mat& img,
     Size winStride, Size padding, const std::vector<Point>& locations) const
 {
     hits.clear();
+    weights.clear();
     if( svmDetector.empty() )
         return;
 
@@ -1821,7 +1824,9 @@ static bool ocl_detectMultiScale(InputArray _img, std::vector<Rect> &found_locat
             all_candidates.push_back(Rect(Point2d(locations[j]) * scale, scaled_win_size));
     }
     found_locations.assign(all_candidates.begin(), all_candidates.end());
-    cv::groupRectangles(found_locations, (int)group_threshold, 0.2);
+    groupRectangles(found_locations, (int)group_threshold, 0.2);
+    clipObjects(imgSize, found_locations, 0, 0);
+
     return true;
 }
 #endif //HAVE_OPENCL
@@ -1877,6 +1882,7 @@ void HOGDescriptor::detectMultiScale(
         groupRectangles_meanshift(foundLocations, foundWeights, foundScales, finalThreshold, winSize);
     else
         groupRectangles(foundLocations, foundWeights, (int)finalThreshold, 0.2);
+    clipObjects(imgSize, foundLocations, 0, &foundWeights);
 }
 
 void HOGDescriptor::detectMultiScale(InputArray img, std::vector<Rect>& foundLocations,
@@ -3532,7 +3538,7 @@ void HOGDescriptor::groupRectangles(std::vector<cv::Rect>& rectList, std::vector
 
     std::vector<cv::Rect_<double> > rrects(nclasses);
     std::vector<int> numInClass(nclasses, 0);
-    std::vector<double> foundWeights(nclasses, DBL_MIN);
+    std::vector<double> foundWeights(nclasses, -std::numeric_limits<double>::max());
     int i, j, nlabels = (int)labels.size();
 
     for( i = 0; i < nlabels; i++ )

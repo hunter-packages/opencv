@@ -178,10 +178,17 @@ if(OpenCV2_INCLUDE_DIRS)
 endif()
 
 if(NOT CMAKE_VERSION VERSION_LESS "2.8.11")
+  # If BUILD_opencv_world==ON, then opencv_world serves as the interface lib 
+  if(BUILD_opencv_world)
+    set(OpenCV_MAIN_LIB opencv_world)
+  else()
+    set(OpenCV_MAIN_LIB opencv_core)
+  endif()
+
   # Target property INTERFACE_INCLUDE_DIRECTORIES available since 2.8.11:
   # * http://www.cmake.org/cmake/help/v2.8.11/cmake.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES
   set_target_properties(
-      opencv_core
+      ${OpenCV_MAIN_LIB}
       PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${OpenCV_INCLUDE_DIRS}"
   )

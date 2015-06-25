@@ -179,16 +179,18 @@ endif()
 
 if(NOT CMAKE_VERSION VERSION_LESS "2.8.11")
   # If BUILD_opencv_world==ON, then opencv_world serves as the interface lib 
-  if(BUILD_opencv_world)
-    set(OpenCV_MAIN_LIB opencv_world)
+  if(TARGET opencv_core)
+    set(OpenCV_INTERFACE_LIB opencv_core)
+  elseif(TARGET opencv_world)
+    set(OpenCV_INTERFACE_LIB opencv_world)
   else()
-    set(OpenCV_MAIN_LIB opencv_core)
+    message(FATAL_ERROR "Failed to find valid target opencv_core or opencv_world" )
   endif()
 
   # Target property INTERFACE_INCLUDE_DIRECTORIES available since 2.8.11:
   # * http://www.cmake.org/cmake/help/v2.8.11/cmake.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES
   set_target_properties(
-      ${OpenCV_MAIN_LIB}
+      ${OpenCV_INTERFACE_LIB}
       PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${OpenCV_INCLUDE_DIRS}"
   )
@@ -337,6 +339,10 @@ foreach(__opttype OPT DBG)
   endif()
 endforeach()
 
+if(TARGET opencv_world)
+  set(OpenCV_LIBS opencv_world)
+endif()
+
 # ==============================================================
 # Compatibility stuff
 # ==============================================================
@@ -354,8 +360,6 @@ if(CMAKE_CROSSCOMPILING AND OpenCV_SHARED AND (CMAKE_SYSTEM_NAME MATCHES "Linux"
     set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-rpath-link,${dir}")
   endforeach()
 endif()
-
-
 
 #
 # Some macroses for samples

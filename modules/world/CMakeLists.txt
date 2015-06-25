@@ -68,11 +68,11 @@ if(IOS OR APPLE)
   endmacro()
 
   if(WITH_PNG)
-    ios_include_3party_libs(zlib libpng)
+    ios_include_3party_libs( ${ZLIB_LIBRARIES} ${PNG_LIBRARIES} ) ## zlib libpng
   endif()
 
   if(WITH_JPEG)
-    ios_include_3party_libs(libjpeg)
+    ios_include_3party_libs( ${JPEG_LIBRARIES} ) ## libjpeg)
   endif()
 
   add_custom_command(TARGET ${the_module} POST_BUILD
